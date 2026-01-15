@@ -71,48 +71,43 @@ The following diagram illustrates the state transitions and decision logic.
 
 ```mermaid
 stateDiagram-v2
-    classDef error fill:#f96,stroke:#333,stroke-width:2px;
-
-    [*] --> PowerOn_Init
-
-    state "Power On Initialization" as PowerOn_Init
-    state "Startup Pulse Logic\n(2s ON / 1s OFF x3)" as Pulse_Logic
-
-    PowerOn_Init --> STD_IDLE
-
-    note right of Pulse_Logic
-        Runs concurrently inside
-        WaterPump_Process
-        during startup
-    end note
+    [*] --> TEST_RUN: Test Mode
+    [*] --> STD_IDLE
 
     %% --- Standard Cycle ---
     state "Standard Idle" as STD_IDLE
     state "Standard PUMP (45s)" as STD_PUMP
 
-    STD_IDLE --> STD_PUMP: S2 == 1 (Water Detected)
-    STD_IDLE --> AUTORUN: 24h No Activity
+    state "TEST RUN (10s)" as TEST_RUN
 
-    STD_PUMP --> Check_S2_Std: Timeout (45s) OR\n(S1 High->Low 5s)
-
-    %% --- Decision Logic ---
+    STD_IDLE --> STD_PUMP: S2 == 1 <br/>(Water Detected)
+    
+    STD_PUMP --> Check_S2_Std: Timeout
+    STD_PUMP --> Check_S2_Std: S1 == 0 -> run 5s pump 
+    
     state Check_S2_Std <<choice>>
+    Check_S2_Std --> STD_IDLE: S2 == 0 && S1 == 0 <br/>(Reset counter!)
+    Check_S2_Std --> SPEC_IDLE: S1 == 1 <br/>(Water Level in between S1 and S2)
+    Check_S2_Std --> ERROR: "S2 == 1 <br/>(Not dumping at all, immediately Error)"
 
-    Check_S2_Std --> STD_IDLE: S1==0 && S2==0\n(Reset Counter)
-    Check_S2_Std --> SPEC_IDLE: S1==1\n(Partial Drain)
-    Check_S2_Std --> ERROR: S2==1\n(Critical: Not Dumping)
-
-    %% --- Special Cycle ---
-    state "Special Idle\n(Counter++)" as SPEC_IDLE
+    %% --- Special / Retry Cycle ---
+    state "Special Idle<br/>(Counter++)" as SPEC_IDLE
     state "Special PUMP (60s)" as SPEC_PUMP
-    state "ERROR (0x202A)" as ERROR ::: error
+    state "ERROR (0x202A)" as ERROR
 
-    SPEC_IDLE --> ERROR: Counter >= Max
-    SPEC_IDLE --> SPEC_PUMP: Counter < Max (Retry)
+    SPEC_IDLE --> ERROR: Counter >= 10
+    SPEC_IDLE --> SPEC_PUMP: Counter < 10 (Retry)
+    note right of SPEC_IDLE
+      Increments Counter
+      on entry
+    end note
 
-    SPEC_PUMP --> STD_IDLE: Timeout OR S1 Logic
+    SPEC_PUMP --> STD_IDLE: Timeout
+    SPEC_PUMP --> STD_IDLE: S1 == 0 -> run 5s pump 
 
-    %% --- AutoRun ---
+    %% --- AutoRun (24h) ---
     state "Autorun (30s)" as AUTORUN
-    AUTORUN --> Check_S2_Std: Cycle Complete
+    STD_IDLE --> AUTORUN: 24h No Activity
+    AUTORUN --> Check_S2_Std: Go check S2
+
 ```
