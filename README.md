@@ -9,13 +9,7 @@ This module controls a **drainage water pump** based on water level sensor input
 - **S2 (Higher Sensor)**: Detects if water has reached a critical high level (triggering the pump).
 - **Pump Output**: Controlled via GPIO to turn the motor **ON** or **OFF**.
 
-## 2. Core Logic Changes (V1.2)
-
-- **S3 Sensor Removed**: The logic no longer relies on an S3 sensor for mode switching.
-- **Startup Pulse**: To prevent air locks (bubbles blocking the pipe), the pump now pulses (**2s ON, 1s OFF**) three times when the system first powers up.
-- **Centralized Decision Making**: A helper function `CheckPostPump` determines the next state after every pump cycle.
-
-## 3. State Machine Description
+## 2. State Machine Description
 
 The system operates in one of the following states (`g_wpState`):
 
@@ -55,7 +49,7 @@ The system operates in one of the following states (`g_wpState`):
 
 **Logic**: Once finished, it checks the sensors using the standard `CheckPostPump` logic to ensure no water was accidentally left behind.
 
-## 4. Potential Error Scenarios
+## 3. Potential Error Scenarios
 
 *(To be filled in by the developer based on testing data)*
 
@@ -71,7 +65,7 @@ The system operates in one of the following states (`g_wpState`):
 - **Description**: [TBD]
 - **System Reaction**: [TBD]
 
-## 5. Logic Flow Diagram
+## 4. Logic Flow Diagram
 
 The following diagram illustrates the state transitions and decision logic.
 
