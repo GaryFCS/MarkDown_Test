@@ -9,6 +9,7 @@ This module controls a **drainage water pump** based on water level sensor input
 - **S2 (Higher Sensor)**: Detects if water has reached a critical high level (triggering the pump).
 - **Pump Output**: Controlled via GPIO to turn the motor **ON** or **OFF**.
 
+
 ## 2. State Machine Description
 
 The system operates in one of the following states (`g_wpState`):
@@ -49,6 +50,7 @@ The system operates in one of the following states (`g_wpState`):
 
 **Logic**: Once finished, it checks the sensors using the standard `CheckPostPump` logic to ensure no water was accidentally left behind.
 
+
 ## 3. Potential Error Scenarios
 
 *(To be filled in by the developer based on testing data)*
@@ -64,6 +66,7 @@ The system operates in one of the following states (`g_wpState`):
 ### Error Case 3: [Placeholder Name]
 - **Description**: [TBD]
 - **System Reaction**: [TBD]
+
 
 ## 4. Logic Flow Diagram
 
