@@ -53,19 +53,34 @@ The system operates in one of the following states (`g_wpState`):
 
 ## 3. Potential Error Scenarios
 
-*(To be filled in by the developer based on testing data)*
+### Error Case 1: Pump Failure (S2 Trigger)
+- **Description**: A critical mechanical failure where the pump is energized but fails to displace water. This is identified when the High-Level Sensor (S2) is triggered while the pump command is active. This indicates that the inflow rate exceeds the pump's capacity or the pump impeller is seized.
+  
+  Condition: $(Pump_{Status} == \text{ON}) \land (Sensor_{S2} == \text{HIGH})$
 
-### Error Case 1: [Placeholder Name]
-- **Description**: [TBD]
-- **System Reaction**: [TBD]
+- **System Reaction**: Immediate Latch: Trigger a CRITICAL_OVERFLOW_ERROR.
+  - **Actuation**: Force the pump to OFF (to prevent motor burnout if seized) or keep ON (if trying to mitigate overflow—depending on safety requirements). Standard practice is usually to stop and sound an alarm.
+  - **UI/Log**: Display "Pump Failure / Overflow" and require a manual hardware reset to clear.
 
-### Error Case 2: [Placeholder Name]
-- **Description**: [TBD]
-- **System Reaction**: [TBD]
+### Error Case 2: Pipe Clog / Incomplete Drain Cycles
+- **Description**: A recurring inefficiency detected in the discharge line. The system detects that the water level remains fluctuating between the Low Limit (S1) and High Limit (S2) without successfully clearing S1. A counter increments each time the pump runs for a specific duration or cycle without reaching the "Empty" state ($< S1$).
+  
+  Condition: $\sum (\text{Cycles}_{incomplete}) \ge 10$
 
-### Error Case 3: [Placeholder Name]
-- **Description**: [TBD]
-- **System Reaction**: [TBD]
+- **System Reaction**: Counter Check: When the fault counter reaches 10, trigger ERROR_PIPE_CLOG.
+  - **Actuation**: Inhibit automatic pump operation to prevent short-cycling damage.
+  - **UI/Log**: Alert the operator to inspect the outlet pipes for partial obstructions.
+
+### Error Case 3: Sensor Wire Disconnection
+- **Description**: A physical disconnection (Open Circuit) occurs in the wiring for sensor S1 or S2. The behavior depends on the hardware fail-safe configuration (Normally Open vs. Normally Closed).
+
+- **System Reaction**: 
+  - **If Normally Closed (NC) - Recommended**: The system reads the open circuit as a logic 0 (Alarm State).
+    - **Result**: The system enters a "Safe Mode" or triggers a False Alarm immediately, ensuring the operator notices the broken wire.
+  
+  - **If Normally Open (NO) - Dangerous**: The system reads the open circuit as a logic 0 (Dry/Safe State).
+    - **Result (S1 Break)**: The pump never starts. Tank overflows.
+    - **Result (S2 Break)**: The High-Level alarm is disabled. Tank overflows without warning if the pump fails.
 
 
 ## 4. Logic Flow Diagram
